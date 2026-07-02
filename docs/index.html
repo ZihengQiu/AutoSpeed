@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="title" content="AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation">
+  <meta name="description" content="AutoSpeed learns stage-adaptive motion speeds for visuomotor policies without requiring speed or stage annotations.">
+  <meta name="keywords" content="robot manipulation, imitation learning, adaptive motion speed, visuomotor policy, action chunking">
+  <meta name="author" content="Qingda Hu, Ziheng Qiu, Jieru Zhao, Zhongxue Gan, Wenchao Ding">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation">
+  <meta property="og:description" content="A model-agnostic framework for annotation-free stage-adaptive motion speed learning in robot manipulation.">
+  <meta property="og:image" content="static/figures/coarse.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation">
+  <meta name="twitter:description" content="AutoSpeed predicts trajectories with stage-adaptive motion speeds by selecting among DCT-retimed supervision targets.">
+  <meta name="twitter:image" content="static/figures/coarse.png">
+  <title>AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation</title>
+  <link rel="stylesheet" href="static/css/site.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation</h1>
+      <!-- <p class="subtitle"> -->
+        <!-- AutoSpeed enables visuomotor policies to infer stage-adaptive motion speeds during end-to-end imitation learning, -->
+        <!-- accelerating easy stages and slowing down precision-critical stages without speed or stage annotations. -->
+      <!-- </p> -->
+      <p class="authors">
+        <span>Qingda Hu<sup>1,*</sup></span>
+        <span>Ziheng Qiu<sup>1,*</sup></span>
+        <span>Jieru Zhao<sup>2</sup></span>
+        <span>Zhongxue Gan<sup>1</sup></span>
+        <span>Wenchao Ding<sup>1,&dagger;</sup></span>
+      </p>
+      <p class="affiliations">
+        <span><sup>1</sup>Fudan University</span>
+        <span><sup>2</sup>Shanghai Jiao Tong University</span>
+      </p>
+      <p class="author-notes">
+        <span><sup>*</sup>Equal Contribution</span>
+        <span><sup>&dagger;</sup>Corresponding Author</span>
+      </p>
+      <p class="correspondence">
+        <span>Email:&nbsp;</span>
+        <a href="mailto:tinda24@163.com">tinda24@163.com</a>,&nbsp;
+        <a href="mailto:zhqiu25@m.fudan.edu.cn">zhqiu25@m.fudan.edu.cn</a>
+      </p>
+      <p class="venue">European Conference on Computer Vision, 2026</p>
+      <nav class="paper-links" aria-label="paper links">
+        <a href="https://arxiv.org/abs/2607.01051" aria-label="Paper source">Paper Source</a>
+        <a href="https://github.com/tinda24/autospeed" aria-label="Code repository">Code</a>
+      </nav>
+      <div class="hero-video">
+        <video controls autoplay muted loop playsinline preload="metadata">
+          <source src="static/figures/RealWorldExperimentVideo.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </section>
+
+    <section class="teaser">
+      <img src="static/figures/coarse.png" alt="AutoSpeed stage-aware motion speed adaptation overview">
+      <p class="caption">
+        Motion speeds in expert demonstrations can be suboptimal. AutoSpeed trains policies to execute easy stages
+        with longer effective prediction horizons and higher speeds, while preserving slower, shorter-horizon behavior
+        for fine-grained manipulation stages.
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>Abstract</h2>
+      <p>
+        Different stages of manipulation tasks exhibit varying levels of difficulty, suggesting stage-dependent motion
+        speeds and temporal prediction horizons. Existing imitation-learning visuomotor policies usually imitate the
+        execution speed of expert demonstrations and predict over a fixed temporal horizon, which limits flexibility and
+        task throughput. AutoSpeed is a model-agnostic learning framework that enables existing visuomotor policies to
+        predict trajectories with stage-adaptive motion speeds without requiring speed or stage annotations. It treats
+        future trajectories at different speeds as candidate supervision targets, evaluates each candidate with a
+        composite cost that balances prediction error and prediction horizon, and optimizes the policy toward the
+        minimum-cost candidate. DCT-based frequency-domain speed modulation supports smooth non-integer speed scaling
+        while preserving motion continuity. Across simulation and real-world evaluations, AutoSpeed reduces task
+        execution time while improving success rates, and the inferred motion speeds correspond closely to task stages.
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>Highlights</h2>
+      <div class="stats-grid">
+        <article>
+          <strong>Annotation-Free</strong>
+          <span>Predict trajectories with stage-adaptive motion speeds, without requiring speed or stage annotations.</span>
+        </article>
+        <article>
+          <strong>Stage-Adaptive</strong>
+          <span>Simple stages are executed faster with a longer prediction horizon, whereas complex stages are executed more slowly with a shorter horizon.</span>
+        </article>
+        <article>
+          <strong>Model-Agnostic</strong>
+          <span>Model-agnostic learning framework that applies to non-generative and generative visuomotor policies.</span>
+        </article>
+        <article>
+          <strong>1.7x Speedup</strong>
+          <span>Significantly reduces execution time, delivering an average speedup of approximately 1.78× across the diverse real-world task suite.
+          </span>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-section" id="method">
+      <h2>Method</h2>
+      <div class="figure-block">
+        <img src="static/figures/fine.png" alt="AutoSpeed cost-aware multi-target selective optimization">
+      </div>
+      <div class="method-grid">
+        <article>
+          <h3>Candidate Speed Targets</h3>
+          <p>
+            AutoSpeed builds a set of future action chunks at different speed ratios. Each
+            candidate keeps the model output length fixed while changing the effective prediction horizon.
+          </p>
+        </article>
+        <article>
+          <h3>Cost-Aware Selection</h3>
+          <p>
+            A composite cost that trades off prediction error against temporal prediction horizon. The policy is optimized toward the minimum-cost candidate.
+          </p>
+        </article>
+        <article>
+          <h3>DCT Motion Transform</h3>
+          <p>
+            Speed modulation is implemented in the frequency domain with the discrete cosine transform, enabling smooth
+            acceleration and deceleration with non-integer ratios.
+          </p>
+        </article>
+        <article>
+          <h3>Ratio Head and NTA</h3>
+          <p>
+            A lightweight ratio head predicts the speed ratio from observation, and  Nonlinear Temporal Aggregation outputs actions by combining the speed for smooth deployment.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <h2>Optimization View</h2>
+      <div class="figure-block compact">
+        <img src="static/figures/optimize.png" alt="AutoSpeed optimization target selection">
+      </div>
+      <p>
+        AutoSpeed formulates training as cost-aware Multi-Target Selective Optimization. Candidate future trajectories
+        are generated by retiming the same action chunk with different speed ratios. The model then optimizes toward the
+        candidate with the minimum composite cost, allowing speed preference to emerge from ordinary demonstration data.
+      </p>
+      <p>
+        Intuitively, in easier stages, future actions remain predictable over longer horizons, permitting higher speed ratios; in precision-critical stages, long-horizon prediction becomes less predictable, yielding lower speed ratios.
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>Simulation Benchmarks</h2>
+      <p>
+        AutoSpeed is evaluated on 62 simulation tasks from ALOHA Simulation, LIBERO-10, and Meta-World. The experiments
+        cover both single-task and multi-task learning, including non-generative ACT and generative BAKU action heads.
+      </p>
+      <div class="figure-block">
+        <img src="static/figures/SimTasks.png" alt="Simulation tasks used in AutoSpeed evaluation">
+      </div>
+      <div class="latex-table-wrap" role="region" aria-label="ALOHA simulation benchmark table">
+        <p class="latex-caption">
+          Table. Quantitative results across multiple tasks on the ALOHA benchmark.
+          &dagger; denotes evaluated with a high-gain controller.
+        </p>
+        <table class="latex-table">
+          <tbody>
+            <tr class="toprule">
+              <th rowspan="2">Method</th>
+              <th colspan="2">Transfer Cube</th>
+              <th colspan="2">Insertion</th>
+            </tr>
+            <tr class="cmidrule">
+              <th>SR (&uarr;)</th>
+              <th>Len (&darr;)</th>
+              <th>SR (&uarr;)</th>
+              <th>Len (&darr;)</th>
+            </tr>
+            <tr class="midrule">
+              <td>ACT</td>
+              <td>72%</td>
+              <td>272</td>
+              <td>22%</td>
+              <td>353</td>
+            </tr>
+            <tr>
+              <td>ACT(<em>AutoSpeed</em>)</td>
+              <td>64%</td>
+              <td><strong>160</strong></td>
+              <td><strong>24%</strong></td>
+              <td>300</td>
+            </tr>
+            <tr class="bottomrule">
+              <td>ACT(<em>AutoSpeed</em><sup>&dagger;</sup>)</td>
+              <td><strong>78%</strong></td>
+              <td>165</td>
+              <td><strong>24%</strong></td>
+              <td><strong>296</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="latex-table-wrap" role="region" aria-label="Multi-task simulation benchmark table">
+        <p class="latex-caption">
+          Table. Quantitative results on multi-task learning benchmarks. Success rate (SR, &uarr;) and
+          episode length (Len, &darr;).
+        </p>
+        <table class="latex-table">
+          <tbody>
+            <tr class="toprule">
+              <th rowspan="2">Method</th>
+              <th colspan="2">LIBERO-10</th>
+              <th colspan="2">Meta-World</th>
+            </tr>
+            <tr class="cmidrule">
+              <th>SR (&uarr;)</th>
+              <th>Len (&darr;)</th>
+              <th>SR (&uarr;)</th>
+              <th>Len (&darr;)</th>
+            </tr>
+            <tr class="midrule">
+              <td>BAKU-DiT</td>
+              <td>50%</td>
+              <td>261</td>
+              <td>43%</td>
+              <td>87</td>
+            </tr>
+            <tr>
+              <td>BAKU-Flow</td>
+              <td>47%</td>
+              <td>287</td>
+              <td>57%</td>
+              <td>82</td>
+            </tr>
+            <tr>
+              <td>BAKU-DiT (<em>AutoSpeed</em>)</td>
+              <td>49%</td>
+              <td>259</td>
+              <td>62%</td>
+              <td><strong>70</strong></td>
+            </tr>
+            <tr class="highlight-row bottomrule">
+              <td>BAKU-Flow (<em>AutoSpeed</em>)</td>
+              <td><strong>52%</strong></td>
+              <td><strong>171</strong></td>
+              <td><strong>65%</strong></td>
+              <td>71</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <h2>Real-World Results</h2>
+      <p>
+        Real robot experiments are conducted on an Agilex Piper bimanual platform with three RGB cameras and robot
+        proprioceptive state. Across four tabletop tasks, AutoSpeed with Nonlinear Temporal Aggregation improves success
+        rates and reduces completion time.
+      </p>
+      <div class="figure-block">
+        <img src="static/figures/RealTasks.png" alt="Real-world AutoSpeed task stages and speed curves">
+      </div>
+      <div class="latex-table-wrap" role="region" aria-label="Real-world evaluation table">
+        <p class="latex-caption">
+          Table. Real-world evaluation. Success rate (SR, &uarr;) and execution time in seconds (Time, &darr;).
+        </p>
+        <table class="latex-table">
+          <tbody>
+            <tr class="toprule">
+              <th rowspan="2">Method</th>
+              <th colspan="2">Transfer the Banana</th>
+              <th colspan="2">Place the Toy</th>
+            </tr>
+            <tr class="cmidrule">
+              <th>SR (&uarr;)</th>
+              <th>Time (&darr;)</th>
+              <th>SR (&uarr;)</th>
+              <th>Time (&darr;)</th>
+            </tr>
+            <tr class="midrule">
+              <td>BAKU-Flow+TA</td>
+              <td>77%</td>
+              <td>20.80s</td>
+              <td>33%</td>
+              <td>18.13s</td>
+            </tr>
+            <tr class="highlight-row">
+              <td>BAKU-Flow (<em>AutoSpeed</em>)+NTA</td>
+              <td><strong>83%</strong></td>
+              <td><strong>11.24s</strong></td>
+              <td><strong>43%</strong></td>
+              <td><strong>10.13s</strong></td>
+            </tr>
+            <tr class="midrule group-head">
+              <th rowspan="2">Method</th>
+              <th colspan="2">Stacking Two Cubes</th>
+              <th colspan="2">Store Block in Drawer</th>
+            </tr>
+            <tr class="cmidrule">
+              <th>SR (&uarr;)</th>
+              <th>Time (&darr;)</th>
+              <th>SR (&uarr;)</th>
+              <th>Time (&darr;)</th>
+            </tr>
+            <tr class="midrule">
+              <td>BAKU-Flow+TA</td>
+              <td>60%</td>
+              <td>50.11s</td>
+              <td>77%</td>
+              <td>38.67s</td>
+            </tr>
+            <tr class="highlight-row bottomrule">
+              <td>BAKU-Flow (<em>AutoSpeed</em>)+NTA</td>
+              <td><strong>63%</strong></td>
+              <td><strong>28.52s</strong></td>
+              <td><strong>80%</strong></td>
+              <td><strong>23.01s</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <h2>Stage-Aware Speed Curves</h2>
+      <div class="figure-row stacked">
+        <figure>
+          <img src="static/figures/banana_speed.png" alt="Predicted speed curve for a real-world banana transfer task">
+          <figcaption>Real-world speed-ratio trajectory.</figcaption>
+        </figure>
+        <figure>
+          <img src="static/figures/ablation_speed.png" alt="Ablation on AutoSpeed speed range bounds">
+          <figcaption>Speed-range ablation on ALOHA Transfer Cube.</figcaption>
+        </figure>
+      </div>
+      <p>
+        The learned speed curves show consistent phase-aware patterns. Policies accelerate during easier free-space
+        motion and decelerate around complex interaction stages, even when trained with different predefined speed ranges.
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>More Results</h2>
+      <div class="more-results">
+        <div class="more-results-text">
+          <h3>Whac-A-Mole Real-World Experiment</h3>
+          <p>AutoSpeed trained on the Whac-A-Mole game adaptively predicts higher motion speeds while the robot arm moves between targets and lowers the speed during pressing, improving precision in interactions.</p>
+          <img class="mole-figure" src="static/figures/dishu.png" alt="Whac-A-Mole real-world experiment setup">
+        </div>
+        <div class="mole-video">
+          <video controls autoplay muted loop playsinline preload="metadata">
+            <source src="static/figures/mole.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="bibtex">
+      <h2>BibTeX</h2>
+      <div class="bibtex-box">
+        <button class="copy-bibtex" type="button" aria-label="Copy BibTeX citation">Copy</button>
+        <pre><code id="bibtex-code">@inproceedings{autospeed2026,
+  title={AutoSpeed: Annotation-Free Stage-Adaptive Motion Speed Learning for Robot Manipulation},
+  author={Hu, Qingda and Qiu, Ziheng and Zhao, Jieru and Gan, Zhongxue and Ding, Wenchao},
+  journal={arXiv preprint arXiv:2607.01051},
+  year={2026}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+  <script>
+    const copyButton = document.querySelector(".copy-bibtex");
+    const bibtexCode = document.querySelector("#bibtex-code");
+    const heroVideo = document.querySelector(".hero-video video");
+
+    heroVideo.muted = true;
+    heroVideo.volume = 0;
+    heroVideo.addEventListener("volumechange", () => {
+      heroVideo.muted = true;
+      heroVideo.volume = 0;
+    });
+
+    copyButton.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(bibtexCode.textContent);
+      copyButton.textContent = "Copied";
+      setTimeout(() => {
+        copyButton.textContent = "Copy";
+      }, 1600);
+    });
+  </script>
+</body>
+</html>
